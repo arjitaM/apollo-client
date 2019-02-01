@@ -701,7 +701,7 @@ export class QueryManager<TStore> {
 
     return new Promise<ApolloQueryResult<T>>((resolve, reject) => {
       const watchedQuery = this.watchQuery<T>(options, false);
-      this.fetchQueryRejectFns.set(watchedQuery.queryId, reject);
+      this.fetchQueryRejectFns.set(`query:${watchedQuery.queryId}`, reject);
       watchedQuery
         .result()
         .then(resolve, reject)
@@ -961,7 +961,8 @@ export class QueryManager<TStore> {
   public removeQuery(queryId: string) {
     const { subscriptions } = this.getQuery(queryId);
     // teardown all links
-    this.fetchQueryRejectFns.delete(queryId);
+    this.fetchQueryRejectFns.delete(`query:${queryId}`);
+    this.fetchQueryRejectFns.delete(`fetchQuery:${queryId}`);
     subscriptions.forEach(x => x.unsubscribe());
     this.queries.delete(queryId);
   }
@@ -1093,7 +1094,7 @@ export class QueryManager<TStore> {
     return new Promise<ApolloQueryResult<T>>((resolve, reject) => {
       // Need to assign the reject function to the rejectFetchPromise variable
       // in the outer scope so that we can refer to it in the .catch handler.
-      this.fetchQueryRejectFns.set(queryId, reject);
+      this.fetchQueryRejectFns.set(`fetchQuery:${queryId}`, reject);
 
       const subscription = execute(this.deduplicator, operation).subscribe({
         next: (result: ExecutionResult) => {
